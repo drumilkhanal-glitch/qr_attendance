@@ -38,8 +38,8 @@ $attendeeCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 $qrPngBase64 = generate_qr_png_base64($session['qr_payload']);
 
 // Calculate remaining time in seconds using MySQL
-$stmt = $pdo->prepare("SELECT UNIX_TIMESTAMP(expires_at) - UNIX_TIMESTAMP(NOW()) as remaining_seconds");
-$stmt->execute();
+$stmt = $pdo->prepare("SELECT UNIX_TIMESTAMP(expires_at) - UNIX_TIMESTAMP(NOW()) as remaining_seconds FROM attendance_session WHERE id = ?");
+$stmt->execute([$sessionId]);
 $result = $stmt->fetch(PDO::FETCH_ASSOC);
 $remainingSeconds = max(0, (int)$result['remaining_seconds']);
 $isActive = $remainingSeconds > 0;
@@ -155,7 +155,7 @@ $isActive = $remainingSeconds > 0;
 <button class="btn btn-primary fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
 
 <div class="container" id="qr-container">
-  <h1>📱 Scan QR Code</h1>
+  <h1>Scan QR Code</h1>
   <div class="class-info">
     <p><strong><?= htmlspecialchars($session['class_name']) ?></strong></p>
     <p><?= htmlspecialchars($session['subject_name']) ?></p>

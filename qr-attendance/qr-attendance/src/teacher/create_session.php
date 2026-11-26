@@ -238,7 +238,7 @@ $remainingSeconds = max(0, (int)$result['remaining_seconds']);
   </div>
 
   <div class="students-info">
-    <strong>📚 <?= (int)$classInfo['enrolled_count'] ?> Students Enrolled</strong>
+    <strong><?= (int)$classInfo['enrolled_count'] ?> Students Enrolled</strong>
     <p>in this class</p>
   </div>
 

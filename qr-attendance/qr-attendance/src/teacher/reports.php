@@ -7,6 +7,13 @@ require_teacher();
 $teacherId = (int)$_SESSION['teacher_id'];
 $pdo = db();
 
+// Check if coming from manual attendance marking
+$markedCount = (int)($_GET['marked'] ?? 0);
+$successMessage = '';
+if ($markedCount > 0) {
+    $successMessage = "✓ Successfully marked attendance for $markedCount student(s)! Scroll down to see the updated report.";
+}
+
 // Get all sessions with attendance counts
 $stmt = $pdo->prepare("
     SELECT
@@ -261,9 +268,15 @@ $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Attendance Reports</h1>
+            <h1> Attendance Reports</h1>
             <a href="/teacher/dashboard.php">← Back to Dashboard</a>
         </div>
+
+        <?php if ($successMessage): ?>
+            <div style="background: #d4edda; border: 2px solid #28a745; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 600;">
+                <?= htmlspecialchars($successMessage) ?>
+            </div>
+        <?php endif; ?>
 
         <!-- Statistics -->
         <div class="stats">
@@ -287,7 +300,7 @@ $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <!-- Reports Table -->
         <div class="card">
-            <h2>📋 All Attendance Sessions</h2>
+            <h2>All Attendance Sessions</h2>
 
             <?php if (empty($sessions)): ?>
                 <div class="empty-state">

@@ -34,14 +34,25 @@ return [
     
     'security' => [
         'enable_csrf' => true,
-        'password_min_length' => 6,
-        'password_require_uppercase' => false,
-        'password_require_numbers' => false,
+        'password_min_length' => 8,
+        'password_require_uppercase' => true,
+        'password_require_numbers' => true,
         'max_login_attempts' => 5,
         'lockout_duration' => 900, // 15 minutes
     ],
     
-    'email' => [
+    'storage' => [
+        'photos_dir' => getenv('PHOTOS_DIR') ?: __DIR__ . '/../../data/photos',
+        'max_photo_size_mb' => (int)(getenv('MAX_PHOTO_SIZE_MB') ?: 5),
+        'allowed_photo_types' => ['jpeg', 'png'],
+        'photo_retention_days' => (int)(getenv('PHOTO_RETENTION_DAYS') ?: 90),
+    ],
+    
+    'rate_limit' => [
+        'attendance_scan_per_minute' => (int)(getenv('RATE_LIMIT_SCANS') ?: 3),
+    ],
+
+    'mail' => [
         'enabled' => (bool)(getenv('MAIL_ENABLED') ?: false),
         'driver' => getenv('MAIL_DRIVER') ?: 'smtp',
         'host' => getenv('MAIL_HOST') ?: 'smtp.mailtrap.io',

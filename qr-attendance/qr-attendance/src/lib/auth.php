@@ -2,7 +2,22 @@
 declare(strict_types=1);
 
 function start_session(): void {
-  if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+  if (session_status() !== PHP_SESSION_ACTIVE) {
+    // Apply session configuration before starting
+    $config = require __DIR__ . '/../config.php';
+    $sessionConfig = $config['session'] ?? [];
+    
+    session_set_cookie_params([
+      'lifetime' => $sessionConfig['lifetime'] ?? 7200,
+      'path' => '/',
+      'domain' => '',
+      'secure' => $sessionConfig['cookie_secure'] ?? false,
+      'httponly' => $sessionConfig['cookie_http_only'] ?? true,
+      'samesite' => $sessionConfig['cookie_same_site'] ?? 'Lax',
+    ]);
+    
+    session_start();
+  }
 }
 
 function require_teacher(): void {

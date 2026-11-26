@@ -504,17 +504,17 @@ $attendancePercentage = $totalEnrolled > 0 ? round(($attendanceRate / $totalEnro
         <!-- Statistics Cards -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon"></div>
                 <div class="stat-number"><?= $attendanceRate ?></div>
                 <div class="stat-label">Students Marked</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">📊</div>
+                <div class="stat-icon"></div>
                 <div class="stat-number"><?= $attendancePercentage ?>%</div>
                 <div class="stat-label">Attendance Rate</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">⏱️</div>
+                <div class="stat-icon">⏱</div>
                 <div class="stat-number"><?= $totalEnrolled ?></div>
                 <div class="stat-label">Total Enrolled</div>
             </div>
@@ -576,7 +576,7 @@ $attendancePercentage = $totalEnrolled > 0 ? round(($attendanceRate / $totalEnro
 
             <?php if (empty($attendees)): ?>
                 <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
+                    <div class="empty-state-icon"></div>
                     <p>No students have marked attendance yet</p>
                 </div>
             <?php else: ?>

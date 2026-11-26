@@ -26,7 +26,12 @@ RUN composer install --no-dev --optimize-autoloader
 # Copy project files (after composer install)
 COPY src/ .
 
-# Ensure proper permissions
-RUN chown -R www-data:www-data /var/www/html
+# Create data directory for photos with secure permissions
+RUN mkdir -p /var/www/html/data/photos && \
+    mkdir -p /var/www/html/logs && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod 755 /var/www/html/data && \
+    chmod 755 /var/www/html/data/photos && \
+    chmod 755 /var/www/html/logs
 
 EXPOSE 80

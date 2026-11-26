@@ -1,26 +1,29 @@
-version: '3.8'
-
 services:
   app:
     build: .
     ports:
-      - "8080:80"
+      - "8083:80"
+    env_file:
+      - .env
     volumes:
       - ./src:/var/www/html
       - app_vendor:/var/www/html/vendor
+      - app_data:/var/www/html/data
     depends_on:
       - db
+    restart: unless-stopped
 
   db:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: qr_attendance
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-qr_attendance}
+      MYSQL_USER: ${DB_USER:-user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
     volumes:
       - ./sql:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
     ports:
       - "3306:3306"
 
@@ -28,10 +31,13 @@ services:
     image: phpmyadmin/phpmyadmin
     restart: always
     ports:
-      - "8081:80"
+      - "8082:80"
     environment:
       PMA_HOST: db
       MYSQL_ROOT_PASSWORD: root
-
+    depends_on:
+      - db
 volumes:
   app_vendor:
+  app_data:
+  db_data:

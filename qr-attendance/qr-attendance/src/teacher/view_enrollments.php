@@ -480,7 +480,7 @@ $enrollments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             <?php if (empty($enrollments)): ?>
                 <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
+                    <div class="empty-state-icon"></div>
                     <p>No enrollments found</p>
                 </div>
             <?php else: ?>

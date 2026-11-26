@@ -664,7 +664,7 @@ foreach ($allStudents as $student) {
         <?php else: ?>
             <div class="card" style="text-align: center; padding: 3rem;">
                 <div class="empty-state">
-                    <div class="empty-state-icon">📚</div>
+                    <div class="empty-state-icon"></div>
                     <p>Select a class from above to manage enrollment</p>
                 </div>
             </div>

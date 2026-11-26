@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS attendance_session (
   INDEX idx_created_at (created_at)
 );
 
--- Attendance Table (with photo storage)
+-- Attendance Table (photo path only, no blob storage)
 CREATE TABLE IF NOT EXISTS attendance (
   id INT AUTO_INCREMENT PRIMARY KEY,
   session_id INT NOT NULL,
@@ -89,7 +89,6 @@ CREATE TABLE IF NOT EXISTS attendance (
   marked_at DATETIME NOT NULL,
   marked_by ENUM('qr_scan', 'manual') DEFAULT 'qr_scan',
   photo_path VARCHAR(255),
-  photo_data LONGBLOB,
   ip_address VARCHAR(45),
   user_agent VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -169,12 +168,12 @@ INSERT INTO student (student_no, full_name, email, phone, password_hash) VALUES
 
 -- Insert Class Subjects
 INSERT INTO class_subject (class_name, subject_name, description) VALUES
-('Class 10-A', 'Mathematics', 'Advanced Mathematics'),
-('Class 10-A', 'English', 'English Literature'),
-('Class 10-A', 'Physics', 'Physics Lab'),
-('Class 10-A', 'Chemistry', 'Chemistry Lab'),
-('Class 10-A', 'Biology', 'Biology Practicals'),
-('Class 10-A', 'History', 'Indian History');
+('BCA 4th sem', 'Operating Systems', 'OS Fundamentals and Concepts'),
+('BCA 4th sem', 'Numerical Methods', 'Numerical Analysis and Methods'),
+('BCA 4th sem', 'Scripting Languages', 'Programming with Script Languages'),
+('BCA 4th sem', 'Software Engineering', 'Software Development and Design'),
+('BCA 4th sem', 'Database Management Systems', 'DBMS Fundamentals'),
+('BCA 4th sem', 'Web Development', 'Web Technologies and Development');
 
 -- Enroll all 28 students in all classes
 INSERT INTO student_enrollment (student_id, class_subject_id) VALUES

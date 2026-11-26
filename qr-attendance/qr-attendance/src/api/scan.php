@@ -4,13 +4,40 @@ require_once __DIR__ . '/../lib/auth.php';
 require_once __DIR__ . '/../lib/db.php';
 require_once __DIR__ . '/../lib/response.php';
 require_once __DIR__ . '/../lib/logger.php';
+require_once __DIR__ . '/../lib/csrf.php';
+require_once __DIR__ . '/../lib/rate_limit.php';
+require_once __DIR__ . '/../lib/photo_manager.php';
+require_once __DIR__ . '/../config.php';
 
 header('Content-Type: application/json');
 
 try {
     require_student();
 
+    // Validate CSRF token
+    if (!CSRF::validateRequest()) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'CSRF token invalid']);
+        exit;
+    }
+
     $studentId = (int)$_SESSION['student_id'];
+    $config = require __DIR__ . '/../config.php';
+
+    // Rate limiting: max 3 scans per minute per student
+    $rateLimitKey = 'scan_' . $studentId;
+    $maxScansPerMinute = $config['rate_limit']['attendance_scan_per_minute'] ?? 3;
+    
+    if (RateLimit::isLimited($rateLimitKey, $maxScansPerMinute, 60)) {
+        http_response_code(429);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Too many scan attempts. Please wait before trying again.',
+            'remaining' => 0
+        ]);
+        exit;
+    }
+
     $payload = trim($_POST['qr_payload'] ?? '');
     $photoData = $_POST['photo_data'] ?? '';
 
@@ -35,7 +62,7 @@ try {
     $token = substr($payload, strlen("SESSION_TOKEN:"));
     $pdo = db();
 
-    // Verify student is enrolled in this class
+    // Verify session and retrieve session details
     $stmt = $pdo->prepare("
         SELECT s.id, s.class_subject_id, s.expires_at
         FROM attendance_session s
@@ -73,34 +100,27 @@ try {
         exit;
     }
 
-    // Create photos directory if not exists
-    $photoDir = __DIR__ . '/../../photos';
-    if (!is_dir($photoDir)) {
-        @mkdir($photoDir, 0777, true);
-    }
+    // Initialize PhotoManager with config
+    PhotoManager::init($config['storage']);
 
-    // Store photo and extract base64 data
-    $photoPath = null;
-    $photoBlob = null;
+    // Save photo securely
+    $photoPath = PhotoManager::savePhoto($photoData, (int)$session['id'], $studentId);
     
-    if (preg_match('/^data:image\/(\w+);base64,(.*)$/', $photoData, $matches)) {
-        $photoBlob = base64_decode($matches[2]);
-        $photoFile = 'photo_' . $session['id'] . '_' . $studentId . '_' . time() . '.jpg';
-        $photoPath = 'photos/' . $photoFile;
-        $fullPath = $photoDir . '/' . $photoFile;
-        file_put_contents($fullPath, $photoBlob);
+    if (!$photoPath) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid photo format or file too large']);
+        exit;
     }
 
-    // Mark attendance
+    // Mark attendance (store path only, not blob)
     $insert = $pdo->prepare("
-        INSERT INTO attendance (session_id, student_id, marked_at, marked_by, photo_path, photo_data, ip_address, user_agent)
-        VALUES (?, ?, NOW(), 'qr_scan', ?, ?, ?, ?)
+        INSERT INTO attendance (session_id, student_id, marked_at, marked_by, photo_path, ip_address, user_agent)
+        VALUES (?, ?, NOW(), 'qr_scan', ?, ?, ?)
     ");
     $insert->execute([
         $session['id'], 
         $studentId, 
         $photoPath,
-        $photoBlob,
         $_SERVER['REMOTE_ADDR'] ?? 'Unknown',
         $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
     ]);
@@ -114,7 +134,8 @@ try {
         'message' => 'Attendance marked successfully with photo verification',
         'data' => [
             'session_id' => $session['id'],
-            'marked_at' => date('Y-m-d H:i:s')
+            'marked_at' => date('Y-m-d H:i:s'),
+            'remaining_attempts' => RateLimit::getRemaining($rateLimitKey, $maxScansPerMinute, 60)
         ]
     ]);
 

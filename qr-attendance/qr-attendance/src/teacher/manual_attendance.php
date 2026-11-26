@@ -20,24 +20,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
     if ($action === 'create_manual_session') {
         $classSubjectId = (int)($_POST['class_subject_id'] ?? 0);
+        $sessionName = trim($_POST['session_name'] ?? 'Manual Attendance Session');
         
         if ($classSubjectId > 0) {
             $token = bin2hex(random_bytes(32));
             $qrPayload = "SESSION_TOKEN:" . $token;
             
             $stmt = $pdo->prepare("
-                INSERT INTO attendance_session (teacher_id, class_subject_id, token, qr_payload, starts_at, expires_at)
-                VALUES (?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 24 HOUR))
+                INSERT INTO attendance_session (teacher_id, class_subject_id, token, qr_payload, session_name, starts_at, expires_at, status)
+                VALUES (?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 24 HOUR), 'active')
             ");
             $stmt->execute([
                 $teacherId,
                 $classSubjectId,
                 $token,
-                $qrPayload
+                $qrPayload,
+                $sessionName
             ]);
             
             $_SESSION['current_session_id'] = (int)$pdo->lastInsertId();
-            $message = '✅ Session created. Select students to mark attendance.';
+            $message = 'Session created. Select students to mark attendance.';
             $messageType = 'success';
         }
     } elseif ($action === 'mark_attendance') {
@@ -59,12 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     // Already marked, skip
                 }
             }
-            $message = "✅ Marked attendance for $count student(s).";
-            $messageType = 'success';
+            // Redirect to reports to show success
+            header('Location: /teacher/reports.php?marked=' . $count);
+            exit;
         }
     } elseif ($action === 'end_session') {
         unset($_SESSION['current_session_id']);
-        $message = '✅ Session ended.';
+        $message = ' Session ended.';
         $messageType = 'info';
     }
 }
@@ -336,7 +339,7 @@ $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 Manual Attendance</h1>
+            <h1> Manual Attendance</h1>
             <a href="/teacher/dashboard.php">← Dashboard</a>
         </div>
 
@@ -365,6 +368,11 @@ $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </select>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="session_name">Session Name (Optional)</label>
+                        <input type="text" name="session_name" id="session_name" placeholder="e.g., Lecture - Topic 1" maxlength="255" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    
                     <button type="submit" class="btn btn-primary">✓ Start Session</button>
                 </form>
             </div>
@@ -373,9 +381,9 @@ $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <!-- Session Active -->
             <div class="session-info">
                 <h3>✓ Active Session</h3>
-                <p><strong>📚 Class:</strong> <?= htmlspecialchars($currentSession['class_name']) ?></p>
-                <p><strong>📖 Subject:</strong> <?= htmlspecialchars($currentSession['subject_name']) ?></p>
-                <p><strong>📊 Total Marked:</strong> <?= (int)$currentSession['total_marked'] ?></p>
+                <p><strong> Class:</strong> <?= htmlspecialchars($currentSession['class_name']) ?></p>
+                <p><strong> Subject:</strong> <?= htmlspecialchars($currentSession['subject_name']) ?></p>
+                <p><strong> Total Marked:</strong> <?= (int)$currentSession['total_marked'] ?></p>
                 <div class="session-status">🟢 Session ID: <?= (int)$currentSession['id'] ?></div>
             </div>
 
@@ -384,7 +392,7 @@ $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <h2 style="margin-bottom: 20px;">Select Students (<?= count($enrolledStudents) ?> Enrolled)</h2>
 
                 <div class="student-count">
-                    📚 <?= count($enrolledStudents) ?> Students in this class
+                    <?= count($enrolledStudents) ?> Students in this class
                 </div>
 
                 <div class="select-all-box">
